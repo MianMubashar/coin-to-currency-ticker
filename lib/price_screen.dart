@@ -1,4 +1,6 @@
 import 'package:crypto_tracker/coin_data.dart';
+import 'package:crypto_tracker/services/crypto.dart';
+import 'package:crypto_tracker/services/networking.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
@@ -54,6 +56,18 @@ class _PriceScreenState extends State<PriceScreen> {
   }
 
   String dropDownListValue = 'USD';
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getData();
+  }
+
+  void getData() {
+    Networking().networkData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
