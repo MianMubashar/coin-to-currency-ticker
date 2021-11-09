@@ -1,9 +1,10 @@
 import 'package:crypto_tracker/coin_data.dart';
-import 'package:crypto_tracker/services/crypto.dart';
-import 'package:crypto_tracker/services/networking.dart';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -11,6 +12,10 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
+  String data = " ? ";
+  String dropDownListValue = 'USD';
+  String? crypto;
+
   DropdownButton androidPicker() {
     List<String> currency = currenciesList;
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -27,23 +32,27 @@ class _PriceScreenState extends State<PriceScreen> {
       onChanged: (value) {
         setState(() {
           dropDownListValue = value!;
+          getData();
         });
       },
     );
   }
 
   CupertinoPicker iOSPicker() {
-    List<Text> list = [];
+    List<Text> iosCurrency = [];
     for (String i in currenciesList) {
-      list.add(Text(i));
+      iosCurrency.add(Text(i));
     }
 
     return CupertinoPicker(
       onSelectedItemChanged: (value) {
-        print(value);
+        setState(() {
+          dropDownListValue = currenciesList[value];
+          getData();
+        });
       },
       itemExtent: 42,
-      children: list,
+      children: iosCurrency,
     );
   }
 
@@ -55,8 +64,6 @@ class _PriceScreenState extends State<PriceScreen> {
     }
   }
 
-  String dropDownListValue = 'USD';
-
   @override
   void initState() {
     // TODO: implement initState
@@ -64,8 +71,12 @@ class _PriceScreenState extends State<PriceScreen> {
     getData();
   }
 
-  void getData() {
-    Networking().networkData();
+  void getData() async {
+    CoinData coinData = CoinData();
+    double rate = await coinData.getCoinData(dropDownListValue);
+    setState(() {
+      data = rate.toStringAsFixed(1);
+    });
   }
 
   @override
@@ -79,27 +90,18 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = ? USD',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          CurrencyCoinCard(
+              data: data,
+              dropDownListValue: dropDownListValue,
+              cryptoListValue: cryptoList[0]),
+          CurrencyCoinCard(
+              data: data,
+              dropDownListValue: dropDownListValue,
+              cryptoListValue: cryptoList[1]),
+          CurrencyCoinCard(
+              data: data,
+              dropDownListValue: dropDownListValue,
+              cryptoListValue: cryptoList[2]),
           Container(
             height: 150.0,
             alignment: Alignment.center,
@@ -108,6 +110,44 @@ class _PriceScreenState extends State<PriceScreen> {
             child: platformSelecter(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class CurrencyCoinCard extends StatelessWidget {
+  const CurrencyCoinCard({
+    Key? key,
+    required this.data,
+    required this.dropDownListValue,
+    required this.cryptoListValue,
+  }) : super(key: key);
+
+  final String data;
+  final String dropDownListValue;
+  final String cryptoListValue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
+      child: Card(
+        color: Colors.lightBlueAccent,
+        elevation: 5.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+          child: Text(
+            '1 $cryptoListValue = $data $dropDownListValue',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
     );
   }
