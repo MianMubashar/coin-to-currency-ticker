@@ -1,10 +1,7 @@
 import 'package:crypto_tracker/coin_data.dart';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -12,9 +9,7 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
-  String data = " ? ";
   String dropDownListValue = 'USD';
-  String? crypto;
 
   DropdownButton androidPicker() {
     List<String> currency = currenciesList;
@@ -64,6 +59,21 @@ class _PriceScreenState extends State<PriceScreen> {
     }
   }
 
+  Map<String, String> cryptoValues = {};
+  bool isWaiting = false;
+  void getData() async {
+    isWaiting = true;
+    try {
+      var rate = await CoinData().getCoinData(dropDownListValue);
+      isWaiting = false;
+      setState(() {
+        cryptoValues = rate;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -71,12 +81,19 @@ class _PriceScreenState extends State<PriceScreen> {
     getData();
   }
 
-  void getData() async {
-    CoinData coinData = CoinData();
-    double rate = await coinData.getCoinData(dropDownListValue);
-    setState(() {
-      data = rate.toStringAsFixed(1);
-    });
+  Column makeCards() {
+    List<CurrencyCoinCard> card = [];
+    for (String crypto in cryptoList) {
+      card.add(CurrencyCoinCard(
+        cryptoListValue: crypto,
+        dropDownListValue: dropDownListValue,
+        data: isWaiting ? '?' : cryptoValues[crypto],
+      ));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: card,
+    );
   }
 
   @override
@@ -90,18 +107,7 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          CurrencyCoinCard(
-              data: data,
-              dropDownListValue: dropDownListValue,
-              cryptoListValue: cryptoList[0]),
-          CurrencyCoinCard(
-              data: data,
-              dropDownListValue: dropDownListValue,
-              cryptoListValue: cryptoList[1]),
-          CurrencyCoinCard(
-              data: data,
-              dropDownListValue: dropDownListValue,
-              cryptoListValue: cryptoList[2]),
+          makeCards(),
           Container(
             height: 150.0,
             alignment: Alignment.center,
@@ -118,14 +124,14 @@ class _PriceScreenState extends State<PriceScreen> {
 class CurrencyCoinCard extends StatelessWidget {
   const CurrencyCoinCard({
     Key? key,
-    required this.data,
-    required this.dropDownListValue,
-    required this.cryptoListValue,
+    this.dropDownListValue,
+    this.cryptoListValue,
+    this.data,
   }) : super(key: key);
 
-  final String data;
-  final String dropDownListValue;
-  final String cryptoListValue;
+  final String? data;
+  final String? dropDownListValue;
+  final String? cryptoListValue;
 
   @override
   Widget build(BuildContext context) {
